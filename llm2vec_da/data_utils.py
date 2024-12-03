@@ -8,7 +8,9 @@
 # In distributed training, the load_dataset function guarantee that only one local process can concurrently
 # download the dataset.
 from datasets import load_dataset
-from llm2vec.dataset.dataset import Dataset, TrainSample, DataSample
+from dataclasses import dataclass
+from typing import Union, List
+import torch
 
 
 
@@ -38,6 +40,8 @@ def _load_from_hub(data_args, model_args):
             streaming=data_args.streaming,
         )
     return raw_datasets
+
+
 def load_raw_datasets(data_args, model_args):
     if data_args.dataset_name is not None:
         # Downloading and loading a dataset from the hub.
@@ -81,6 +85,54 @@ def _load_from_files(data_args, model_args):
         )
     return raw_datasets
 
+
+@dataclass
+class DataSample:
+    id_: int
+    query: str
+    positive: str
+    negative: str = None
+    task_name: str = None
+
+
+class TrainSample:
+    """
+    Structure for one input example with texts, the label and a unique id
+    """
+
+    def __init__(
+        self, guid: str = "", texts: List[str] = None, label: Union[int, float] = 0
+    ):
+        """
+        Creates one TrainSample with the given texts, guid and label
+
+
+        :param guid
+            id for the example
+        :param texts
+            the texts for the example.
+        :param label
+            the label for the example
+        """
+        self.guid = guid
+        self.texts = texts
+        self.label = label
+
+    def __str__(self):
+        return "<TrainSample> label: {}, texts: {}".format(
+            str(self.label), "; ".join(self.texts)
+        )
+
+
+class Dataset(torch.utils.data.Dataset):
+    def load_data(self, file_path: str = None):
+        raise NotImplementedError()
+
+    def __getitem__(self, index):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
 
 
 
