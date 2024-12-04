@@ -125,6 +125,10 @@ class TrainSample:
 
 
 class Dataset(torch.utils.data.Dataset):
+    """
+    Abstract class for datasets
+    """
+    
     def load_data(self, file_path: str = None):
         raise NotImplementedError()
 
@@ -137,6 +141,9 @@ class Dataset(torch.utils.data.Dataset):
 
 
 class PairedDataset(Dataset):
+    """
+    Prepares a dataset for SIMCSE training by pairing the same text with itself as positive example
+    """
 
     def __init__(self, data:Dataset):
         self.data = []
