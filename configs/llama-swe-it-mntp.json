@@ -22,5 +22,6 @@
     "torch_dtype": "bfloat16",
     "attn_implementation": "flash_attention_2",
     "push_to_hub": true,
-    "hub_model_id": "jealk/llm2vec-da-mntp"
+    "hub_model_id": "jealk/llm2vec-da-mntp",
+    "seed": 42
 }
