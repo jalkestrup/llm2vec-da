@@ -82,7 +82,7 @@ class MNTPTrainer(Trainer):
         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
 
 
-"""
+
 
 class SimCSETrainer(Trainer):
 
@@ -158,4 +158,3 @@ class SimCSEDefaultCollator:
 
         return sentence_features, labels
 
-"""

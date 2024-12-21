@@ -5,7 +5,7 @@
     "bidirectional": true,
     "pooling_mode": "mean",
     "dataset_name": "Wiki1M",
-    "dataset_file_path": "jealk/scandi-wiki-combined",
+    "dataset_file_path": "data/scandi-wiki-combined",
     "dataset_config_name": "default",
     "remove_unused_columns": false,
     "learning_rate": 3e-5,

@@ -5,7 +5,7 @@
     "bidirectional": true,
     "pooling_mode": "mean",
     "dataset_name": "Wiki1M",
-    "dataset_file_path": "cache/wiki1m_for_simcse_scandi.txt",
+    "dataset_file_path": "data/wiki1m_for_simcse_scandi.txt",
     "remove_unused_columns": false,
     "learning_rate": 3e-5,
     "loss_scale": 20,

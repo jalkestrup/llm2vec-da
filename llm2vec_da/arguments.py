@@ -272,9 +272,9 @@ class CustomArguments:
     )
 
 
-parser = HfArgumentParser(
-    (ModelArguments, DataTrainingArguments, TrainingArguments, CustomArguments)
-)
+#parser = HfArgumentParser(
+#    (ModelArguments, DataTrainingArguments, TrainingArguments, CustomArguments)
+#)
 
 
 @dataclass
@@ -366,6 +366,7 @@ class SimCSEDataTrainingArguments:
     dataset_file_path: Optional[str] = field(
         default=None, metadata={"help": "The input training data file or folder."}
     )
+
     # TODO: implement this
     max_train_samples: Optional[int] = field(
         default=None,
