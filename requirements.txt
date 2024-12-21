@@ -1,4 +1,8 @@
-evaluate==0.4.3
+
 flash-attn==flash-attn 2.7.0.post2
+evaluate==0.4.3
 scikit-learn==1.5.2
 accelerate==1.1.1
+llm2vec==0.2.2
+seb==0.13.7
+matplotlib==3.10.0

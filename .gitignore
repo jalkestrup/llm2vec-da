@@ -2,3 +2,5 @@
 *output
 *experiments
 *pycache*
+*.env
+output/**
