@@ -6,8 +6,8 @@ from typing import Dict, Union
 
 import torch
 import torch.nn as nn
-#from llm2vec import LLM2Vec
-#from llm2vec.dataset.dataset import TrainSample
+from llm2vec import LLM2Vec
+from llm2vec.dataset.dataset import TrainSample
 from transformers import DataCollatorForLanguageModeling, TrainerCallback, Trainer
 
 logger = logging.getLogger(__name__)

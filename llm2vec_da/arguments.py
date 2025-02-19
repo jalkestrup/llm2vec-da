@@ -271,6 +271,35 @@ class CustomArguments:
         metadata={"help": "The type of data collator. Options: default, all_mask"},
     )
 
+    wandb_project: Optional[str] = field(
+        default="LLM2Vec", metadata={"help": "Weights & Biases (W&B) project name"}
+    )
+    
+    wandb_run_group: Optional[str] = field(
+        default=None, metadata={"help": "W&B run group for experiment tracking"}
+    )
+
+    wandb_log_model: Optional[str] = field(
+        default="checkpoint", metadata={"help": "Set to 'checkpoint' to log model checkpoints"}
+    )
+
+    wandb_watch: Optional[str] = field(
+        default="false", metadata={"help": "Enable logging of gradients. Options: false, gradients, all"}
+    )
+
+    #Should this also be part of the SimCSE custom args despite only being relevant for supervised?
+    loss_class: Optional[str] = field(
+        default="HardNegativeNLLLoss",
+        metadata={
+            "help": "The loss class to use for supervised training. Options: HardNegativeNLLLoss"
+        },
+    )
+
+    loss_scale: float = field(
+        default=50.0, metadata={"help": "The loss scale for the hardnegative loss function"}
+    )
+    
+
 
 #parser = HfArgumentParser(
 #    (ModelArguments, DataTrainingArguments, TrainingArguments, CustomArguments)
@@ -430,6 +459,6 @@ class SimCSECustomArguments:
     )
 
 
-simcse_parser = HfArgumentParser(
-        (SimCSEModelArguments, SimCSEDataTrainingArguments, TrainingArguments, SimCSECustomArguments)
-    )
+#simcse_parser = HfArgumentParser(
+#        (SimCSEModelArguments, SimCSEDataTrainingArguments, TrainingArguments, SimCSECustomArguments)
+#    )

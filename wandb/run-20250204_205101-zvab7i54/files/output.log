@@ -1,0 +1,16 @@
+
+***** Running Evaluation *****
+  Num examples = 7895
+  Batch size = 32
+Configuration saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/checkpoint-10/config.json
+Model weights saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/checkpoint-10/model.safetensors
+tokenizer config file saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/checkpoint-10/tokenizer_config.json
+Special tokens file saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/checkpoint-10/special_tokens_map.json
+tokenizer config file saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/tokenizer_config.json
+Special tokens file saved in output/mntp/Meta-Llama-3-sheared-1B-Instruct/special_tokens_map.json
+Logging checkpoint artifacts in checkpoint-10. ...
+[34m[1mwandb[0m: Adding directory to artifact (./output/mntp/Meta-Llama-3-sheared-1B-Instruct/checkpoint-10)... Done. 23.1s
+
+***** Running Evaluation *****
+  Num examples = 7895
+  Batch size = 32
