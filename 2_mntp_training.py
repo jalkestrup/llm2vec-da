@@ -8,6 +8,7 @@ from transformers import (
     HfArgumentParser,
     AutoConfig,
     AutoTokenizer,
+    TrainingArguments,
     is_torch_tpu_available
 )
 from peft import LoraConfig, get_peft_model
@@ -118,7 +119,7 @@ def main():
         trust_remote_code=model_args.trust_remote_code,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
-        attn_implementation="sdpa",  # Note: Set back to flash_attention when running on A100 GPU
+        attn_implementation="flash_attention",  # Note: sdpa for running on L4/T4. Set back to flash_attention when running on A100 GPU
     )
 
     # Setup PEFT - first get PEFT-wrapped version of inner model
@@ -170,7 +171,7 @@ def main():
     )
 
     # Load datasets
-    tokenized_datasets = datasets.load_from_disk("data/mntp_wiki_dk_512_sheared")
+    tokenized_datasets = datasets.load_from_disk(custom_args.tokenized_dataset_path)
     
     train_dataset = tokenized_datasets["train"]
     if data_args.max_train_samples is not None:

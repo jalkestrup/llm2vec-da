@@ -257,6 +257,11 @@ class CustomArguments:
 
     lora_r: int = field(default=8, metadata={"help": "The r value for lora"})
 
+    tokenized_dataset_path: str = field(
+        default="",
+        metadata={"help": "The path to a pre-tokenized dataset used for training and validation"}
+    )
+
     mask_token_type: str = field(
         default="blank",
         metadata={"help": "The type of mask token. Options: blank, eos, mask"},
