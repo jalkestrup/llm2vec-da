@@ -114,16 +114,16 @@ def main():
     config = AutoConfig.from_pretrained(
         model_args.model_name_or_path, **config_kwargs
     )
-    model_class = get_model_class(config)
+    model_class = get_model_class(config)  # This returns LlamaBiForMNTP which has the modified attention
 
-    # Initialize model
+    # Initialize model with modified attention
     torch_dtype = (
         model_args.torch_dtype
         if model_args.torch_dtype in ["auto", None]
         else getattr(torch, model_args.torch_dtype)
     )
     
-    # Load base model
+    # Load base model - this will be LlamaBiForMNTP with modified attention
     model = model_class.from_pretrained(
         model_args.model_name_or_path,
         from_tf=bool(".ckpt" in model_args.model_name_or_path),
@@ -135,18 +135,20 @@ def main():
         trust_remote_code=model_args.trust_remote_code,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
-        attn_implementation="flash_attention",
+        attn_implementation="flash_attention_2",
     )
 
     # Load the trained PEFT adapter from HuggingFace
+    # Note: model.get_model_for_peft() is used to get the inner model, matching LlamaBiForMNTP's structure
+    inner_model = model.get_model_for_peft()
     peft_model = PeftModel.from_pretrained(
-        model.model,  # Pass the inner transformer model
+        inner_model,
         "jealk/llm2vec-scandi-mntp-v2",
         is_trainable=True
     )
     
-    # Replace inner model with loaded PEFT model
-    model.model = peft_model
+    # Use the setter to properly update the model with PEFT
+    model.set_model_for_peft(peft_model)
 
     # Setup tokenizer
     tokenizer_kwargs = {
