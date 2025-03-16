@@ -4,3 +4,5 @@
 *pycache*
 *.env
 output/**
+*log
+wandb/**

@@ -21,7 +21,7 @@ from llm2vec_da.training import (
     StopTrainingCallback
 )
 from llm2vec_da.metrics import MetricEvaluator, preprocess_logits_for_metrics
-
+from dotenv import load_dotenv
 
 def initialize_peft(
     model,
@@ -73,6 +73,7 @@ def parse_args():
 
 def main():
     # Parse command line arguments
+    # load_dotenv()
     args = parse_args()
     
     # Parse model arguments from config file
@@ -119,7 +120,7 @@ def main():
         trust_remote_code=model_args.trust_remote_code,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
-        attn_implementation="flash_attention",  # Note: sdpa for running on L4/T4. Set back to flash_attention when running on A100 GPU
+        attn_implementation="flash_attention_2",  # Note: sdpa for running on L4/T4. Set back to flash_attention when running on A100 GPU
     )
 
     # Setup PEFT - first get PEFT-wrapped version of inner model
@@ -232,6 +233,12 @@ def main():
 
     # Finish wandb run
     wandb.finish()
+    
+    import subprocess
+    import time
+    time.sleep(120)  # Wait 2 minutes to ensure all processes are properly saved
+    subprocess.run(["sudo", "shutdown", "-h", "now"])
+
 
 
 if __name__ == "__main__":
