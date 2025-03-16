@@ -138,17 +138,23 @@ def main():
         attn_implementation="flash_attention_2",
     )
 
-    # Load the trained PEFT adapter from HuggingFace
-    # Note: model.get_model_for_peft() is used to get the inner model, matching LlamaBiForMNTP's structure
-    inner_model = model.get_model_for_peft()
-    peft_model = PeftModel.from_pretrained(
-        inner_model,
-        "jealk/llm2vec-scandi-mntp-v2",
-        is_trainable=True
+    # First initialize PEFT on the base model's inner transformer
+    peft_model = initialize_peft(
+        model.model,  # This is the LlamaBiModel
+        lora_r=custom_args.lora_r,
+        lora_alpha=2 * custom_args.lora_r,
+        lora_dropout=custom_args.lora_dropout,
     )
     
-    # Use the setter to properly update the model with PEFT
-    model.set_model_for_peft(peft_model)
+    # Replace the inner model with PEFT-wrapped version
+    model.model = peft_model
+
+    # Now load the trained adapter weights from HuggingFace
+    model.model.load_adapter(
+        "jealk/llm2vec-scandi-mntp-v2",
+        adapter_name="default",  # Use 'default' as the adapter name
+        is_trainable=True
+    )
 
     # Setup tokenizer
     tokenizer_kwargs = {
