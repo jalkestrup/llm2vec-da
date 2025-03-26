@@ -1,8 +1,0 @@
-{"time":"2025-02-04T20:51:01.848414089Z","level":"INFO","msg":"stream: starting","core version":"0.19.5","symlink path":"/teamspace/studios/this_studio/llm2vec-da/wandb/run-20250204_205101-zvab7i54/logs/debug-core.log"}
-{"time":"2025-02-04T20:51:01.954665459Z","level":"INFO","msg":"created new stream","id":"zvab7i54"}
-{"time":"2025-02-04T20:51:01.954767757Z","level":"INFO","msg":"stream: started","id":"zvab7i54"}
-{"time":"2025-02-04T20:51:01.954954425Z","level":"INFO","msg":"handler: started","stream_id":"zvab7i54"}
-{"time":"2025-02-04T20:51:01.955119494Z","level":"INFO","msg":"writer: Do: started","stream_id":"zvab7i54"}
-{"time":"2025-02-04T20:51:01.955439285Z","level":"INFO","msg":"sender: started","stream_id":"zvab7i54"}
-{"time":"2025-02-04T20:51:02.186557583Z","level":"INFO","msg":"Starting system monitor"}
-{"time":"2025-02-04T22:22:09.145092418Z","level":"INFO","msg":"Pausing system monitor"}
