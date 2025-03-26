@@ -267,13 +267,6 @@ def main():
     # Finish wandb run
     wandb.finish()
 
-    # Shutdown VM after completion
-    print("Training completed. Shutting down VM in 2 minutes...")
-    import subprocess
-    import time
-    time.sleep(120)  # Wait 2 minutes to ensure all processes are properly saved
-    subprocess.run(["sudo", "shutdown", "-h", "now"])
-
 
 if __name__ == "__main__":
     main() 
