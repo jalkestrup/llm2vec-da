@@ -13,7 +13,7 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model
 from typing import List, Optional
-from llm2vec_da.arguments import ModelArguments, DataTrainingArguments, CustomArguments
+from llm2vec_da.arguments import ModelArguments, MNTPDataTrainingArguments, CustomArguments
 from llm2vec_da.model import get_model_class
 from llm2vec_da.training import (
     DataCollatorForLanguageModelingWithFullMasking,
@@ -78,7 +78,7 @@ def main():
     
     # Parse model arguments from config file
     parser = HfArgumentParser(
-        (ModelArguments, DataTrainingArguments, TrainingArguments, CustomArguments)
+        (ModelArguments, MNTPDataTrainingArguments, TrainingArguments, CustomArguments)
     )
     
     model_args, data_args, training_args, custom_args = parser.parse_json_file(args.config)

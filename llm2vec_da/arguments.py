@@ -76,12 +76,6 @@ class ModelArguments:
             )
         },
     )
-    use_auth_token: bool = field(
-        default=None,
-        metadata={
-            "help": "The `use_auth_token` argument is deprecated and will be removed in v4.34. Please use `token` instead."
-        },
-    )
     trust_remote_code: bool = field(
         default=False,
         metadata={
@@ -144,6 +138,9 @@ class DataTrainingArguments:
             "help": "The configuration name of the dataset to use (via the datasets library)."
         },
     )
+    dataset_file_path: Optional[str] = field(
+        default=None, metadata={"help": "The input training data file or folder."}
+    )
     train_file: Optional[str] = field(
         default=None, metadata={"help": "The input training data file (a text file)."}
     )
@@ -175,16 +172,6 @@ class DataTrainingArguments:
     preprocessing_num_workers: Optional[int] = field(
         default=None,
         metadata={"help": "The number of processes to use for the preprocessing."},
-    )
-    mlm_probability: float = field(
-        default=0.15,
-        metadata={"help": "Ratio of tokens to mask for masked language modeling loss"},
-    )
-    line_by_line: bool = field(
-        default=False,
-        metadata={
-            "help": "Whether distinct lines of text in the dataset are to be handled as distinct sequences."
-        },
     )
     pad_to_max_length: bool = field(
         default=False,
@@ -244,6 +231,19 @@ class DataTrainingArguments:
                     )
 
 
+@dataclass
+class MNTPDataTrainingArguments(DataTrainingArguments):
+    mlm_probability: float = field(
+        default=0.15,
+        metadata={"help": "Ratio of tokens to mask for masked language modeling loss"},
+    )
+    line_by_line: bool = field(
+        default=False,
+        metadata={
+            "help": "Whether distinct lines of text in the dataset are to be handled as distinct sequences."
+        },
+    )
+
 # add more arguments
 @dataclass
 class CustomArguments:
@@ -292,6 +292,10 @@ class CustomArguments:
         default="false", metadata={"help": "Enable logging of gradients. Options: false, gradients, all"}
     )
 
+    experiment_id: Optional[str] = field(
+        default=None, metadata={"help": "The experiment id"}
+    )
+
     #Should this also be part of the SimCSE custom args despite only being relevant for supervised?
     loss_class: Optional[str] = field(
         default="HardNegativeNLLLoss",
@@ -305,26 +309,11 @@ class CustomArguments:
     )
     
 
-
-#parser = HfArgumentParser(
-#    (ModelArguments, DataTrainingArguments, TrainingArguments, CustomArguments)
-#)
-
-
 @dataclass
-class SimCSEModelArguments:
+class EmbeddingModelArguments(ModelArguments):
     """
-    Arguments pertaining to which model/config/tokenizer we are going to fine-tune, or train from scratch.
+    Arguments specific to embedding models, inheriting from base ModelArguments.
     """
-
-    model_name_or_path: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": (
-                "The base model checkpoint for weights initialization. Don't set if you want to train a model from scratch."
-            )
-        },
-    )
     peft_model_name_or_path: Optional[str] = field(
         default=None,
         metadata={"help": ("The PEFT model checkpoint to add on top of base model.")},
@@ -337,32 +326,6 @@ class SimCSEModelArguments:
             )
         },
     )
-    max_seq_length: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "The maximum total input sequence length after tokenization. Sequences longer "
-                "than this will be truncated."
-            )
-        },
-    )
-    torch_dtype: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": (
-                "Override the default `torch.dtype` and load the model under this dtype. If `auto` is passed, the "
-                "dtype will be automatically derived from the model's weights."
-            ),
-            "choices": ["auto", "bfloat16", "float16", "float32"],
-        },
-    )
-    attn_implementation: Optional[str] = field(
-        default="sdpa",
-        metadata={
-            "help": ("The attention implementation to use in the model."),
-            "choices": ["eager", "sdpa", "flash_attention_2"],
-        },
-    )
     pooling_mode: Optional[str] = field(
         default="mean",
         metadata={
@@ -370,100 +333,16 @@ class SimCSEModelArguments:
             "choices": ["mean", "weighted_mean", "eos_token"],
         },
     )
-    cache_dir: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "Where do you want to store the pretrained models downloaded from huggingface.co"
-        },
-    )
-    token: str = field(
-        default=None,
-        metadata={
-            "help": (
-                "The token to use as HTTP bearer authorization for remote files. If not specified, will use the token "
-                "generated when running `huggingface-cli login` (stored in `~/.huggingface`)."
-            )
-        },
-    )
 
 
 @dataclass
-class SimCSEDataTrainingArguments:
+class SimCSECustomArguments(CustomArguments):
     """
-    Arguments pertaining to what data we are going to input our model for training and eval.
-    """
-
-    dataset_name: Optional[str] = field(
-        default=None,
-        metadata={"help": "The name of the dataset to use. Options: E5"},
-    )
-    dataset_file_path: Optional[str] = field(
-        default=None, metadata={"help": "The input training data file or folder."}
-    )
-
-    # TODO: implement this
-    max_train_samples: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "For debugging purposes or quicker training, truncate the number of training examples to this "
-                "value if set."
-            )
-        },
-    )
-    validation_split_percentage: Optional[int] = field(
-        default=5,
-        metadata={
-            "help": "The percentage of the train set used as validation set in case there's no validation split"
-        },
-    )
-    dataset_config_name: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "The configuration name of the dataset to use (via the datasets library)."
-        },
-    )
-    streaming: bool = field(default=False, metadata={"help": "Enable streaming mode"})
-
-
-
-
-@dataclass
-class SimCSECustomArguments:
-    """
-    Custom arguments for the script
+    Custom arguments for the SimCSE script
     """
 
     simcse_dropout: float = field(
         default=0.1, metadata={"help": "The SimCSE dropout rate for the model"}
     )
 
-    lora_dropout: float = field(
-        default=0.05, metadata={"help": "The dropout rate for lora"}
-    )
 
-    lora_r: int = field(default=8, metadata={"help": "The r value for lora"})
-
-    stop_after_n_steps: int = field(
-        default=10000, metadata={"help": "Stop training after n steps"}
-    )
-
-    experiment_id: Optional[str] = field(
-        default=None, metadata={"help": "The experiment id"}
-    )
-
-    loss_class: Optional[str] = field(
-        default="HardNegativeNLLLoss",
-        metadata={
-            "help": "The loss class to use for training. Options: HardNegativeNLLLoss"
-        },
-    )
-
-    loss_scale: float = field(
-        default=50.0, metadata={"help": "The loss scale for the loss function"}
-    )
-
-
-#simcse_parser = HfArgumentParser(
-#        (SimCSEModelArguments, SimCSEDataTrainingArguments, TrainingArguments, SimCSECustomArguments)
-#    )

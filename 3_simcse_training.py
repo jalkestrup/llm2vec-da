@@ -7,8 +7,8 @@ import argparse
 from huggingface_hub import login
 from transformers import HfArgumentParser
 from llm2vec_da.arguments import (
-    SimCSEModelArguments,
-    SimCSEDataTrainingArguments,
+    EmbeddingModelArguments,
+    DataTrainingArguments,
     TrainingArguments,
     SimCSECustomArguments,
 )
@@ -35,7 +35,7 @@ def main():
     
     # Parse arguments from config file
     simcse_parser = HfArgumentParser(
-        (SimCSEModelArguments, SimCSEDataTrainingArguments, TrainingArguments, SimCSECustomArguments)
+        (EmbeddingModelArguments, DataTrainingArguments, TrainingArguments, SimCSECustomArguments)
     )
     
     model_args, data_args, training_args, custom_args = simcse_parser.parse_json_file(args.config)
