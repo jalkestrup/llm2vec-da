@@ -1,12 +1,6 @@
 # *LLM-BASED EMBEDDING MODELS IN LOW RESOURCE LANGUAGES*
-##  DTU 02456, Deep Learning
 
 ## Repo overview
-This repository contains code for the DTU Course 02456, Deep Learning, and has been made to accomodate the need for a clean repository with runnable notebooks.
-The repo also contains the poster from the oral exam, placed in root as *'LLM Based Embedding Models in Low Ressource Languages poster.pdf'*.
-
-For practical purposes of running training jobs on a remote GPU, the primary results from the hand-in has been obtained by running a the various training .py files within the /experiments folder of this repo https://github.com/jalkestrup/llm2vec-dtu - which is a forked and slightly modified version of the original LLM2Vec repo https://github.com/McGill-NLP/llm2vec/ (to accomodate for new datasets).
-
 The datasets created during this project is available in my HF profile, and the most succesfull fine-tunes are likewise uploaded as models to the hub: https://huggingface.co/jealk .
 
 ## Replicating results on SEB
@@ -21,7 +15,6 @@ All previous evaluations are placed as .pkl and log files in the sub-folder /eva
 
 ### Visualisations of training and SEB results
 Figures of train loss and SEB results are plotted by running the file llm2vec_train_results.ipynb from end-to-end. 
-Training steps are hard-copied from the respective training output folders into this file.
 
 *Note: During the project, actual SEB evals and repo-updates has been done in this repo, https://github.com/jalkestrup/dtu-deep-project , of which the relevant files have been merged into this repo for clarity*
 
