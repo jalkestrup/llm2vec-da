@@ -205,7 +205,7 @@ class SupervisedTrainer(Trainer):
         d_reps = self.model(features[1])
 
         d_reps_neg = None
-        if len(features) > 2:
+        if len(features) > 2 and features[2] is not None:
             d_reps_neg = self.model(features[2])
 
         loss = self.loss_function(q_reps, d_reps, d_reps_neg)

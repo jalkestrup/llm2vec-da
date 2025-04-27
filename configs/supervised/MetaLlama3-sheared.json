@@ -1,6 +1,6 @@
 {
     "model_name_or_path": "princeton-nlp/Sheared-LLaMA-1.3B",
-    "peft_model_name_or_path": "jealk/llm2vec-da-mntp-sheared",
+    "peft_model_name_or_path": "McGill-NLP/LLM2Vec-Sheared-LLaMA-mntp",
     "bidirectional": true,
     "pooling_mode": "mean",
     "dataset_name": "DDSC/nordic-embedding-training-data",

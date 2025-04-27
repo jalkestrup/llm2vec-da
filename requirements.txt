@@ -1,4 +1,4 @@
-
+transformers==4.47.1
 flash-attn==flash-attn 2.7.0.post2
 evaluate==0.4.3
 scikit-learn==1.5.2

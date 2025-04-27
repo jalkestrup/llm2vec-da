@@ -68,7 +68,7 @@ class ModelArguments:
         },
     )
     token: str = field(
-        default=None,
+        default="",
         metadata={
             "help": (
                 "The token to use as HTTP bearer authorization for remote files. If not specified, will use the token "
@@ -160,6 +160,10 @@ class DataTrainingArguments:
             "help": "The percentage of the train set used as validation set in case there's no validation split"
         },
     )
+    preprocessing_num_workers: Optional[int] = field(
+        default=None,
+        metadata={"help": "The number of processes to use for the preprocessing."},
+    )
     max_seq_length: Optional[int] = field(
         default=None,
         metadata={
@@ -168,10 +172,6 @@ class DataTrainingArguments:
                 "than this will be truncated."
             )
         },
-    )
-    preprocessing_num_workers: Optional[int] = field(
-        default=None,
-        metadata={"help": "The number of processes to use for the preprocessing."},
     )
     pad_to_max_length: bool = field(
         default=False,
