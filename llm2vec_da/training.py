@@ -12,6 +12,13 @@ from transformers import DataCollatorForLanguageModeling, TrainerCallback, Train
 from transformers.trainer_utils import seed_worker
 from torch.utils.data import DataLoader, SequentialSampler
 
+from transformers import (
+    LlamaConfig,
+    MistralConfig,
+    GemmaConfig,
+    Qwen2Config,
+)
+
 logger = logging.getLogger(__name__)
 
 class DataCollatorForLanguageModelingWithFullMasking(DataCollatorForLanguageModeling):
@@ -129,6 +136,70 @@ class SimCSETrainer(Trainer):
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
 
+
+def prepare_for_tokenization(model, text, pooling_mode="mean"):
+    if model.config._name_or_path == "meta-llama/Meta-Llama-3-8B-Instruct":
+        text = (
+            "<|start_header_id|>user<|end_header_id|>\n\n" + text.strip() + "<|eot_id|>"
+        )
+        return text
+    if model.config._name_or_path in [
+        "mistralai/Mistral-7B-Instruct-v0.2",
+        "meta-llama/Llama-2-7b-chat-hf",
+    ]:
+        text = "[INST] " + text.strip() + " [/INST]"
+    if model.config._name_or_path in [
+        "google/gemma-2-9b-it",
+    ]:
+        text = "<bos><start_of_turn>user\n" + text.strip() + "<end_of_turn>"
+    if model.config._name_or_path in [
+        "Qwen/Qwen2-1.5B-Instruct",
+        "Qwen/Qwen2-7B-Instruct",
+    ]:
+        text = "<|im_start|>user\n" + text.strip() + "<|im_end|>"
+    if pooling_mode == "eos_token":
+        if model.config._name_or_path == "meta-llama/Meta-Llama-3-8B":
+            text = text.strip() + "<|end_of_text|>"
+        elif isinstance(model.config, LlamaConfig) or isinstance(
+            model.config, MistralConfig
+        ):
+            text = text.strip() + " </s>"
+        elif isinstance(model.config, GemmaConfig):
+            text = text.strip() + "<eos>"
+        elif isinstance(model.config, Qwen2Config):
+            text = text.strip() + "<|endoftext|>"
+    return text
+
+
+class MixedNegCollator:
+    #def __init__(self, model: LLM2Vec):
+    def __init__(self, model):
+        self.model = model
+
+    def _prep(self, txt):
+        return prepare_for_tokenization(self.model, txt,
+                                        pooling_mode=self.model.pooling_mode)
+
+    def __call__(self, batch):
+        q_texts, p_texts, n_texts, labels = [], [], [], []
+
+        for ex in batch:
+            q_texts.append(self._prep(ex.texts[0]))
+            p_texts.append(self._prep(ex.texts[1]))
+
+            if len(ex.texts) > 2 and ex.texts[2]:
+                n_texts.append(self._prep(ex.texts[2]))
+
+            labels.append(ex.label)
+
+        sent_feat_q = self.model.tokenize(q_texts)          # size B
+        sent_feat_p = self.model.tokenize(p_texts)          # size B
+        sent_feat_n = (
+            self.model.tokenize(n_texts) if n_texts else None
+        )      
+                                                     # size ≤ B or None
+
+        return [sent_feat_q, sent_feat_p, sent_feat_n], torch.tensor(labels)
 
 class SimCSEDefaultCollator:
     def __init__(self, tokenizer:Callable):

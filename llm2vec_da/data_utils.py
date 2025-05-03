@@ -332,3 +332,143 @@ class E5Data(Dataset):
             )
         elif self.split == "validation":
             assert False, "E5Data does not have a validation split."
+
+
+
+class NordicE5Data(Dataset):
+    """
+    A dataset class for loading and processing data from a Hugging Face dataset to a datasample following E5 datastructure.
+    
+    This class handles loading instruction-based samples with queries, positive examples,
+    and optional negative examples. It processes the data into batches suitable for training.
+
+    Args:
+        hf_dataset: The dataset to load from (local or remote)
+        [Optional] instruction_column (str): Column name for instructions. Defaults to 'instruction'. Prepends the instruction to the query.
+        query_column (str): Column name for queries. Defaults to 'query'
+        pos_column (str): Column name for positive examples. Defaults to 'positive'
+        [Optional] neg_column (str): Column name for negative examples. Defaults to 'negative'
+        [Optional] task_column (str): Column name for task labels. Task is used to group the data by task during batching.
+        split (str): Dataset split to use. Defaults to "train"
+        effective_batch_size (int): Size of batches to create, accounting for parallel processes.
+        separator (str): Separator string between text segments. Defaults to "!@#$%^&*()"
+    """
+
+    def __init__(
+        self,
+        hf_dataset,
+        instruction_column = 'instruction',
+        query_column = 'query',
+        pos_column = 'positive',
+        neg_column = 'negative',
+        task_column = 'task',
+        split: str = "train",
+        effective_batch_size: int = 32,
+        separator: str = "!@#$%^&*()", #Note default of LLM2Vec is !@#$%^&*() , changing this would also have to be changed in the llm2vec lib when encoding/decoding
+    ):
+        self.instruction_column = instruction_column
+        self.query_column = query_column
+        self.pos_column = pos_column
+        self.neg_column = neg_column
+        self.task_column = task_column
+        self.split = split
+        self.effective_batch_size = effective_batch_size
+        self.separator = separator
+        self.data = []
+        self.load_data(hf_dataset)
+
+    def __len__(self):
+        return len(self.data)
+
+    def load_data(self, hf_dataset):
+        # 1) Convert the hf dataset to a list of DataSamples
+        all_samples = []
+        for idx, row in tqdm(enumerate(hf_dataset), total=len(hf_dataset), desc='Loading dataset'):
+            
+            # If no query and positive example, skip the example
+            if self.query_column not in row or self.pos_column not in row:
+                logger.warning(f"No query or positive example found for example {idx}, skipping")
+                continue
+
+            # If instruction column is provided, prepend the instruction to the query
+            if self.instruction_column:
+                instruction = row[self.instruction_column]
+                query =  f"{instruction}; {self.separator}{row[self.query_column]}"
+            else:
+                query =  f"{row[self.query_column]}"
+        
+            pos   =  f"{self.separator}{row[self.pos_column]}"
+
+            # If negative column is provided include negative example
+            neg_raw = row[self.neg_column]
+            if neg_raw is None or neg_raw.strip().lower() in {"", "none", "null"}:
+                neg = None
+            else:
+                neg   =  f"{self.separator}{row[self.neg_column]}"
+
+            # If task column is provided include task name as to group batches per task
+            if row[self.task_column]:
+                task  =  row[self.task_column]
+            else:
+                task = None
+
+            all_samples.append(
+                DataSample(
+                    id_=idx,
+                    query=query,
+                    positive=pos,
+                    negative=neg,
+                    task_name=task
+                )
+            )
+
+        # First, group samples by task
+        task_samples = {}
+        for idx, sample in tqdm(enumerate(all_samples), total=len(all_samples), desc='Grouping data by task'):
+            task = sample.task_name
+            if task not in task_samples:
+                task_samples[task] = []
+            task_samples[task].append(sample)
+
+        logger.info(f"Batching data for effective batch size = {self.effective_batch_size} ...")
+        batched_data = []
+
+        # Create full batches for each task
+        for task, samples in tqdm(task_samples.items(), total=len(task_samples), desc='Batching data'):
+            task_batches = []
+            for i in range(0, len(samples), self.effective_batch_size):
+                batch = samples[i : i + self.effective_batch_size]
+                if len(batch) == self.effective_batch_size:
+                    task_batches.append(batch)
+                else:
+                    logger.info(f"Skipping partial batch of {len(batch)} samples for task {task}")
+            
+            if task_batches:  # If we got any full batches for this task
+                batched_data.extend(task_batches)
+
+        # Shuffle the batches to mix tasks during training
+        random.shuffle(batched_data)
+
+        # Flatten while maintaining batch boundaries
+        self.data = [sample for batch in batched_data for sample in batch]
+        logger.info(f"Loaded and batched {len(self.data)} samples from {len(task_samples)} tasks")
+
+    def __getitem__(self, index):
+        sample = self.data[index]
+        texts = [sample.query, sample.positive]
+        if sample.negative is not None:          
+            texts.append(sample.negative)
+        return TrainSample(texts=texts, label=1.0)
+        
+def custom_dataset(hf_dataset,
+                      effective_batch_size):
+    
+    dataset_map = {
+        "nordic-embedding-training-data": NordicE5Data
+    }
+
+    if hf_dataset.info.dataset_name in dataset_map:
+        return dataset_map[hf_dataset.info.dataset_name](hf_dataset,
+                                                        effective_batch_size=effective_batch_size)
+    else:
+        raise ValueError(f"Dataset {hf_dataset.info.dataset_name} not found in dataset_map")
