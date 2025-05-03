@@ -408,16 +408,42 @@ class LLM2Vec(nn.Module):
             all_embeddings = np.asarray([emb.numpy() for emb in all_embeddings])
         return all_embeddings
 
-    def save(self, output_path, merge_before_save=False, save_config=True):
-        if merge_before_save and isinstance(self.model, PeftModel):
+    def save(self, output_path, merge_before_save=False, save_config=True, save_mode="full"):
+        """
+        Save the model to the specified output path.
+        
+        Args:
+            output_path (str): Path to save the model
+            merge_before_save (bool, optional): Whether to merge PEFT adapter before saving. Defaults to False.
+            save_config (bool, optional): Whether to save the LLM2Vec config. Defaults to True.
+            save_mode (str, optional): Mode for saving the model. Options:
+                - "full": Save full model (original behavior)
+                - "peft_only": Save only PEFT adapter
+                - "merged": Merge PEFT adapter and save as single model
+                Defaults to "full".
+        """
+        if save_mode not in ["full", "peft_only", "merged"]:
+            raise ValueError(f"Invalid save_mode: {save_mode}. Must be one of ['full', 'peft_only', 'merged']")
+
+        # Handle PEFT model merging based on save_mode
+        if save_mode == "merged" or (merge_before_save and isinstance(self.model, PeftModel)):
             self.model = self.model.merge_and_unload()
             # Fixes the issue of saving - https://huggingface.co/McGill-NLP/LLM2Vec-Mistral-7B-Instruct-v2-mntp-unsup-simcse/discussions/1
             if hasattr(self.model, "_hf_peft_config_loaded"):
                 self.model._hf_peft_config_loaded = False
 
-        self.model.save_pretrained(output_path)
+        # Save model based on save_mode
+        if save_mode == "peft_only":
+            if not isinstance(self.model, PeftModel):
+                raise ValueError("Cannot save PEFT adapter: model is not a PEFT model")
+            self.model.save_pretrained(output_path, save_adapter=True)
+        else:
+            self.model.save_pretrained(output_path)
+
+        # Save tokenizer
         self.tokenizer.save_pretrained(output_path)
 
+        # Save LLM2Vec config
         llm2vec_config = {
             "pooling_mode": self.pooling_mode,
             "max_length": self.max_length,

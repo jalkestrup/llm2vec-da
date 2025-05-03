@@ -19,6 +19,7 @@
     "logging_steps": 5,
     "save_steps": 50,
     "save_only_model": true,
+    "save_total_limit": 1,
     "stop_after_n_steps": 1000,
     "lora_r": 16,
     "gradient_checkpointing": true,

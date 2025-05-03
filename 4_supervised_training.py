@@ -1,6 +1,7 @@
 # Standard library
 import os
 import argparse
+from typing import Optional
 
 # Third-party libraries
 import transformers
@@ -19,6 +20,22 @@ from llm2vec_da.data_utils import custom_dataset
 from llm2vec_da.loss.utils import load_loss
 from llm2vec_da.training import MixedNegCollator, SupervisedTrainer, StopTrainingCallback
 from llm2vec_da.arguments import EmbeddingModelArguments, DataTrainingArguments, CustomArguments
+
+class PEFTSupervisedTrainer(SupervisedTrainer):
+    def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        # If we are executing this function, we are the process zero, so we don't check for that.
+        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save only the PEFT adapter
+        self.model.save(output_dir, save_mode="peft_only")
+        
+        # Save tokenizer
+        self.tokenizer.save_pretrained(output_dir)
+        
+        # Save training arguments
+        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Supervised Training Script')
@@ -144,7 +161,7 @@ def main():
 
     train_loss = load_loss(custom_args.loss_class, scale=custom_args.loss_scale)
 
-    trainer = SupervisedTrainer(
+    trainer = PEFTSupervisedTrainer(
         model=model,
         args=training_args,
         train_dataset=train_examples,
