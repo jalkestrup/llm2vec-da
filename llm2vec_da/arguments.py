@@ -191,11 +191,11 @@ class DataTrainingArguments:
             )
         },
     )
-    max_eval_samples: Optional[int] = field(
+    max_eval_batches: Optional[int] = field(
         default=None,
         metadata={
             "help": (
-                "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
+                "For debugging purposes or quicker training, truncate the number of evaluation batches to this "
                 "value if set."
             )
         },

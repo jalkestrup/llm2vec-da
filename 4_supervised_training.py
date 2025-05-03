@@ -15,6 +15,7 @@ from datasets import load_dataset
 from dotenv import load_dotenv
 import torch
 from tqdm import tqdm
+from torch.utils.data import Subset
 
 # Local application/library imports
 from llm2vec_da import LLM2Vec
@@ -105,14 +106,20 @@ def main():
     train_dataset_e5 = custom_dataset(train_dataset, 
                                     effective_batch_size=training_args.per_device_train_batch_size* accelerator.num_processes)
 
+
     valid_dataset_e5 = custom_dataset(valid_dataset,
                                     effective_batch_size=training_args.per_device_train_batch_size* accelerator.num_processes)
 
-    torch_dtype = (
-        model_args.torch_dtype
-        if model_args.torch_dtype in ["auto", None]
-        else getattr(torch, model_args.torch_dtype)
-    )
+    if data_args.max_eval_batches is not None:
+        k = min(data_args.max_eval_batches, len(valid_dataset_e5))
+        from torch.utils.data import Subset
+        valid_dataset_e5 = Subset(valid_dataset_e5, range(k))
+
+        torch_dtype = (
+            model_args.torch_dtype
+            if model_args.torch_dtype in ["auto", None]
+            else getattr(torch, model_args.torch_dtype)
+        )
 
     #training_args.gradient_checkpointing = False   # turn it off
     model = LLM2Vec.from_pretrained(
@@ -127,17 +134,9 @@ def main():
         attn_implementation="sdpa", #OBS SET BACK TO FLASH ATTENTION WHEN RUNNING ON A100 GPU!!
     )
 
-    # peft_model = initialize_peft(
-    #     model.model,
-    #     lora_r=custom_args.lora_r,
-    #     lora_alpha=2 * custom_args.lora_r,
-    #     lora_dropout=custom_args.lora_dropout,
-    # )
 
-    # model.model = peft_model.model
     # model organization is LLM2VecModel.model -> HF Model, we have to apply PEFT to the inner model
- 
-    
+   
     model.model = initialize_peft(
         model.model,
         lora_r=custom_args.lora_r,
@@ -167,6 +166,8 @@ def main():
         )
     ]
 
+    print(f'First valid examples: {valid_examples[:2]}')
+
     # Setup wandb
     os.environ["WANDB_PROJECT"] = custom_args.wandb_project
     os.environ["WANDB_LOG_MODEL"] = custom_args.wandb_log_model
@@ -177,6 +178,8 @@ def main():
 
     os.environ["WANDB_LOG_MODEL"]="false"
 
+    # Drop incomplete batches
+    training_args.dataloader_drop_last = True
 
     train_loss = load_loss(custom_args.loss_class, scale=custom_args.loss_scale)
 

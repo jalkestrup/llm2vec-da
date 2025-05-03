@@ -181,6 +181,10 @@ class MixedNegCollator:
                                         pooling_mode=self.model.pooling_mode)
 
     def __call__(self, batch):
+        if len(batch) == 0:
+            print("⚠️  Empty eval batch encountered")
+            return None
+
         q_texts, p_texts, n_texts, labels = [], [], [], []
 
         for ex in batch:
@@ -199,7 +203,11 @@ class MixedNegCollator:
         )      
                                                      # size ≤ B or None
 
-        return [sent_feat_q, sent_feat_p, sent_feat_n], torch.tensor(labels)
+        return {"q":  sent_feat_q,
+                "p":  sent_feat_p,
+                "n":  sent_feat_n,      # can be None
+                "labels": labels,
+            }
 
 class SimCSEDefaultCollator:
     def __init__(self, tokenizer:Callable):
@@ -265,30 +273,26 @@ class SupervisedTrainer(Trainer):
         super().__init__(*args, **kwargs)
         self.loss_function = loss_function
 
-    def compute_loss(
-        self,
-        model: nn.Module,
-        inputs: Dict[str, Union[torch.Tensor, Any]],
-        return_outputs: bool = False,
-        **kwargs, 
-    ) -> Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
-        features, labels = inputs
-        q_reps = self.model(features[0])
-        d_reps = self.model(features[1])
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        q_rep = model(inputs["q"])
+        p_rep = model(inputs["p"])
+        n_rep = model(inputs["n"]) if inputs["n"] is not None else None
 
-        d_reps_neg = None
-        if len(features) > 2 and features[2] is not None:
-            d_reps_neg = self.model(features[2])
-
-        loss = self.loss_function(q_reps, d_reps, d_reps_neg)
+        loss = self.loss_function(q_rep, p_rep, n_rep)
 
         if return_outputs:
+            # optional extra output, keep if you need it for something
             output = torch.cat(
-                [model(row)["sentence_embedding"][:, None] for row in features], dim=1
+                [q_rep["sentence_embedding"][:, None],
+                p_rep["sentence_embedding"][:, None],
+                n_rep["sentence_embedding"][:, None] if n_rep is not None else
+                torch.empty_like(q_rep["sentence_embedding"][:, None])],
+                dim=1
             )
             return loss, output
 
         return loss
+
 
     def get_train_dataloader(self) -> DataLoader:
         # Copying most of the code from the parent class, changing the sampler to SequentialSampler
@@ -305,6 +309,7 @@ class SupervisedTrainer(Trainer):
         dataloader_params = {
             "batch_size": self._train_batch_size,
             "collate_fn": data_collator,
+            "drop_last": self.args.dataloader_drop_last,
             "num_workers": self.args.dataloader_num_workers,
             "pin_memory": self.args.dataloader_pin_memory,
             "persistent_workers": self.args.dataloader_persistent_workers,
@@ -317,6 +322,33 @@ class SupervisedTrainer(Trainer):
             dataloader_params["worker_init_fn"] = seed_worker
 
         return self.accelerator.prepare(DataLoader(train_dataset, **dataloader_params))
+
+    def get_eval_dataloader(self, eval_dataset: Optional[Any] = None) -> DataLoader:
+        dataset = eval_dataset if eval_dataset is not None else self.eval_dataset
+        data_collator = self._get_collator_with_removed_columns(
+            self.data_collator, description="evaluation"
+        )
+
+        dataloader_params = {
+            "batch_size":      self.args.per_device_eval_batch_size,
+            "collate_fn":      data_collator,
+            "sampler":         SequentialSampler(dataset),
+            "drop_last":       False, 
+            "num_workers":     self.args.dataloader_num_workers,
+            "pin_memory":      self.args.dataloader_pin_memory,
+            "persistent_workers": self.args.dataloader_persistent_workers,
+        }
+        return self.accelerator.prepare(DataLoader(dataset, **dataloader_params))
+
+    # Overwrite the function used for eval to use the correct loss function
+    def prediction_step(
+        self, model, inputs, prediction_loss_only=True, ignore_keys=None
+    ):
+        if inputs is None:                 # skip empty batches
+            return None, None, None
+
+        loss = self.compute_loss(model, inputs, return_outputs=False)
+        return loss.detach(), None, None   # logits / labels not needed
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         # If we are executing this function, we are the process zero, so we don't check for that.
