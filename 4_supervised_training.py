@@ -2,6 +2,8 @@
 import os
 import argparse
 from typing import Optional
+os.environ["HF_LOG_LEVEL"] = "error"          
+os.environ["HF_HUB_LOG_LEVEL"] = "error"      
 
 # Third-party libraries
 import transformers
@@ -12,6 +14,7 @@ from huggingface_hub import HfApi
 from datasets import load_dataset
 from dotenv import load_dotenv
 import torch
+from tqdm import tqdm
 
 # Local application/library imports
 from llm2vec_da import LLM2Vec
@@ -32,7 +35,7 @@ class PEFTSupervisedTrainer(SupervisedTrainer):
         
         # Save tokenizer
         self.tokenizer.save_pretrained(output_dir)
-        
+            
         # Save training arguments
         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
 
@@ -48,6 +51,12 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+
+    if '/teamspace' in os.getcwd():
+        os.chdir('/teamspace/studios/this_studio/llm2vec-da')
+        # Hmm lighting AI studio changed to the below ..?
+        #os.chdir('/home/zeus/content/llm2vec-da')
+
     args = parse_args()
     load_dotenv()
 
@@ -118,15 +127,23 @@ def main():
         attn_implementation="sdpa", #OBS SET BACK TO FLASH ATTENTION WHEN RUNNING ON A100 GPU!!
     )
 
-    peft_model = initialize_peft(
+    # peft_model = initialize_peft(
+    #     model.model,
+    #     lora_r=custom_args.lora_r,
+    #     lora_alpha=2 * custom_args.lora_r,
+    #     lora_dropout=custom_args.lora_dropout,
+    # )
+
+    # model.model = peft_model.model
+    # model organization is LLM2VecModel.model -> HF Model, we have to apply PEFT to the inner model
+ 
+    
+    model.model = initialize_peft(
         model.model,
         lora_r=custom_args.lora_r,
         lora_alpha=2 * custom_args.lora_r,
         lora_dropout=custom_args.lora_dropout,
     )
-
-    # model organization is LLM2VecModel.model -> HF Model, we have to apply PEFT to the inner model
-    model.model = peft_model.model
 
     tokenizer = model.tokenizer
     data_collator = MixedNegCollator(model) 
@@ -157,6 +174,8 @@ def main():
         os.environ["WANDB_RUN_GROUP"] = custom_args.wandb_run_group
     if custom_args.wandb_watch:
         os.environ["WANDB_WATCH"] = custom_args.wandb_watch
+
+    os.environ["WANDB_LOG_MODEL"]="false"
 
 
     train_loss = load_loss(custom_args.loss_class, scale=custom_args.loss_scale)

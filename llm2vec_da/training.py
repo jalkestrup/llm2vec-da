@@ -270,6 +270,7 @@ class SupervisedTrainer(Trainer):
         model: nn.Module,
         inputs: Dict[str, Union[torch.Tensor, Any]],
         return_outputs: bool = False,
+        **kwargs, 
     ) -> Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]:
         features, labels = inputs
         q_reps = self.model(features[0])

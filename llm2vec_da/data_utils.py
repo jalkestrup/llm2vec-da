@@ -11,7 +11,7 @@ from datasets import load_dataset
 from dataclasses import dataclass
 from typing import Union, List
 import torch
-
+from tqdm import tqdm
 
 
 def _load_from_hub(data_args, model_args):
