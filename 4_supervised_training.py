@@ -92,8 +92,8 @@ def main():
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {"use_reentrant": False}
 
-    dataset = load_dataset(data_args.dataset_name,
-    split="train[:10%]")
+    dataset = load_dataset(data_args.dataset_name, split="train")
+    #split="train[:10%]")
     #,columns=['query', 'positive', 'negative', 'instruction', 'task'])
 
     # Split the dataset into 95% train and 5% test
@@ -125,13 +125,13 @@ def main():
     model = LLM2Vec.from_pretrained(
         base_model_name_or_path=model_args.model_name_or_path,
         enable_bidirectional=model_args.bidirectional,
-        peft_model_name_or_path="McGill-NLP/LLM2Vec-Sheared-LLaMA-mntp",
+        peft_model_name_or_path=model_args.peft_model_name_or_path,
         merge_peft=True,
         pooling_mode=model_args.pooling_mode,
         max_length=data_args.max_seq_length,
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=model_args.low_cpu_mem_usage,
-        attn_implementation="sdpa", #OBS SET BACK TO FLASH ATTENTION WHEN RUNNING ON A100 GPU!!
+        attn_implementation="flash_attention_2", #sdpa for L2 GPU on lighting, flash-2 for A100
     )
 
 
@@ -142,6 +142,13 @@ def main():
         lora_r=custom_args.lora_r,
         lora_alpha=2 * custom_args.lora_r,
         lora_dropout=custom_args.lora_dropout,
+    )
+
+    # Now load the trained prev supervised model to continue training
+    model.model.load_adapter(
+        "jealk/TTC-L2V-supervised-1",
+        adapter_name="default",  # Use 'default' as the adapter name
+        is_trainable=True
     )
 
     tokenizer = model.tokenizer
