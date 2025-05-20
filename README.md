@@ -1,43 +1,65 @@
-# *LLM-BASED EMBEDDING MODELS IN LOW RESOURCE LANGUAGES*
+# LLM2Vec-DA: Training Code for Scandinavian Language Embeddings
 
-## Repo overview
-The datasets created during this project is available in my HF profile, and the most succesfull fine-tunes are likewise uploaded as models to the hub: https://huggingface.co/jealk .
+This repository contains the code and training scripts for training embedding models for Scandinavian languages using the LLM2Vec approach. The code has been used to train models that achieve state-of-the-art performance on the [Scandinavian Embedding Benchmark (SEB)](https://kennethenevoldsen.github.io/scandinavian-embedding-benchmark/).
 
-## Replicating results on SEB
-To replicate the results on the Scandinavian Embedding Benchmark, run the .py file seb_l2v_eval_SOTA.py which has the PEFT models pre-set as variables. If one wish to run SEB eval on another model, simply replace the following arguments and re-run:
+## Notable Models Trained with This Code
 
-hf_mntp_model = 'jealk/llm2vec-da-mntp'
-hf_simcse_model = 'jealk/TTC-unsupervised-1'
-seb_model_name = 'llama-8b-swe-llm2vec-mntp-dkwiki-simcse-scandiwiki-1000-steps'
+The code in this repository has been used to train several models, including:
 
-### Logs of previous run
-All previous evaluations are placed as .pkl and log files in the sub-folder /evals
+1. **TTC-L2V-supervised-2** ([Hugging Face](https://huggingface.co/jealk/TTC-L2V-supervised-2)): The current state-of-the-art supervised embedding model for Danish, Swedish, and Norwegian.
+2. **TTC-L2V-unsupervised-1** ([Hugging Face](https://huggingface.co/jealk/TTC-L2V-unsupervised-1)): The best performing unsupervised embedding model for Danish text.
 
-### Visualisations of training and SEB results
-Figures of train loss and SEB results are plotted by running the file llm2vec_train_results.ipynb from end-to-end. 
+## Repository Structure
 
-*Note: During the project, actual SEB evals and repo-updates has been done in this repo, https://github.com/jalkestrup/dtu-deep-project , of which the relevant files have been merged into this repo for clarity*
+- `llm2vec_da/`: Core library code, a rewrite of the [LLM2Vec](https://github.com/McGill-NLP/llm2vec) library
+- `configs/`: Training configurations for different models
+  - `mntp/`: Configurations for MNTP (Masked Next Token Prediction) training
+  - `supervised/`: Configurations for supervised training
+  - `simcse/`: Configurations for SimCSE training
+- `seb/`: Code for running evaluations on the Scandinavian Embedding Benchmark
+- Training scripts:
+  - `1_mntp_data_tokenize.ipynb`: Notebook for preparing MNTP training data
+  - `2_mntp_training.py`: MNTP training script
+  - `3_simcse_training.py`: SimCSE training script
+  - `4_supervised_training.py`: Supervised training script
 
-## Training, MTP, SimcSE and supervised
-Configs for all fine-tunes are placed in /configs folder from which underlying dataset and model parameters is defined
+## Training Pipeline
 
-### Creating datasets
-To re-create the Danish dataset used for MNTP and SimCSE training, run the 0_dk_wiki_data_create.ipynb . Do not run the cells that attempt to huggingface repo as these will fail, instead save to local /data. Similarly for the scandinavian and supervised dataset, using 0_scandi_wiki_data_create.ipynb and 0_supervised_data_create.
+The models are trained in a multi-stage process:
 
-### Preparing for training
-Run 1_mntp_data_tokenize.ipynb to create the tokenized dataset
+1. **MNTP Training**: Initial training using Masked Next Token Prediction
+   - First run `1_mntp_data_tokenize.ipynb` to prepare the training data
+   - Then use `2_mntp_training.py` for the actual training
+   - Configuration in `configs/mntp/`
 
-### MNTP training
-**Note: This requires >50GB GPU RAM and was run on a A100, 80 GB GPU**. 1000 steps, training time approximately 2 hours.
-Run 2_mntp_training.ipynb
+2. **Supervised Training**: Fine-tuning on supervised data
+   - Use `4_supervised_training.py`
+   - Configuration in `configs/supervised/`
+   - This produces the state-of-the-art TTC-L2V-supervised-2 model
 
-### SimCSE
-**Note: This requires >50GB GPU RAM and was run on a A100, 80 GB GPU**. 1000 steps, training time approximately 3 hours.
-Run 3_simcse_training.ipynb
+3. **SimCSE Training** (Optional): Unsupervised training using SimCSE
+   - Use `3_simcse_training.py`
+   - Configuration in `configs/simcse/`
+   - This produces the TTC-L2V-unsupervised-1 model
 
-### Supervised
-**Note: This requires >50GB GPU RAM and was run on a A100, 80 GB GPU**.  500 steps w. grad-accum=4, training time approximately 14 hours.
-4_supervised_training is not implemented, refer to the link in the file for the .py file run to create the model refered to in the hand-in.
+## Evaluation
+
+The `seb/` directory contains code for evaluating models on the Scandinavian Embedding Benchmark. This includes:
+- Running evaluations
+- Visualizing results
+- Comparing model performance
+
+## Requirements
+
+- Python 3.8+
+- PyTorch
+- Transformers
+- Accelerate
+- Other dependencies listed in `requirements.txt`
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 
 
