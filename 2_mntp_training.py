@@ -22,6 +22,7 @@ from llm2vec_da.training import (
 )
 from llm2vec_da.metrics import MetricEvaluator, preprocess_logits_for_metrics
 from dotenv import load_dotenv
+from datasets import load_dataset
 
 def initialize_peft(
     model,
@@ -73,7 +74,7 @@ def parse_args():
 
 def main():
     # Parse command line arguments
-    # load_dotenv()
+    load_dotenv()
     args = parse_args()
     
     # Parse model arguments from config file
@@ -171,8 +172,14 @@ def main():
         mlm_probability=data_args.mlm_probability
     )
 
-    # Load datasets
-    tokenized_datasets = datasets.load_from_disk(custom_args.tokenized_dataset_path)
+    # Load datasets : Local files
+    # tokenized_datasets = datasets.load_from_disk(custom_args.tokenized_dataset_path)
+    
+    # Load datasets : Huggingface
+    tokenized_datasets = load_dataset(custom_args.tokenized_dataset_path,
+                                      split=None,
+                                      use_auth_token=True)
+
     
     train_dataset = tokenized_datasets["train"]
     if data_args.max_train_samples is not None:

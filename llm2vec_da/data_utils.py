@@ -19,7 +19,7 @@ def _load_from_hub(data_args, model_args):
         data_args.dataset_name,
         data_args.dataset_config_name,
         cache_dir=model_args.cache_dir,
-        token=model_args.token,
+        #token=model_args.token,
         streaming=data_args.streaming,
     )
     if "validation" not in raw_datasets.keys():
@@ -28,7 +28,7 @@ def _load_from_hub(data_args, model_args):
             data_args.dataset_config_name,
             split=f"train[:{data_args.validation_split_percentage}%]",
             cache_dir=model_args.cache_dir,
-            token=model_args.token,
+            #token=model_args.token,
             streaming=data_args.streaming,
         )
         raw_datasets["train"] = load_dataset(
@@ -36,7 +36,7 @@ def _load_from_hub(data_args, model_args):
             data_args.dataset_config_name,
             split=f"train[{data_args.validation_split_percentage}%:]",
             cache_dir=model_args.cache_dir,
-            token=model_args.token,
+            #token=model_args.token,
             streaming=data_args.streaming,
         )
     return raw_datasets
